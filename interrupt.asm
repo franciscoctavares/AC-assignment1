@@ -5,3 +5,4 @@
 enable_interrupts:
 	mfc0 $t0, $12
 	jr $ra
+	li $v0, 5
