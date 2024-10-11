@@ -17,8 +17,14 @@ AVAILABLE_LIST: .word 0x00000000
 main:
 # prepare the structures
 	jal prep_multi
+	la $a0, STRING_main
+	loop:
+		li $v0, 4
+		syscall
+		j loop
 	li $v0, 10
 	syscall
+		
 	
 # newtask (t0)
 	#la $a0, $t0
@@ -59,7 +65,7 @@ prep_multi:
 	la $s0, RUNNING_LIST
 	la $s1, READY_LIST
 	la $s2, LAST_READY
-
+	
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)
 	
