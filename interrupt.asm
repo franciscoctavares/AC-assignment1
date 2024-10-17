@@ -1,7 +1,15 @@
 # you must put here the necessary code to deal with the interrupts
+
+.include "macros.asm"
+
 .data
 
-PCB_BLOCKS: .space 1320 # 132 bytes x 10 Tasks
+PCB_BLOCKS: .space 1440 # 132 bytes x 10 Tasks
+RUNNING: .word 0x00000000
+READY: .word 0x00000000
+LAST_READY: .word 0x00000000
+
+RUNNING_str: .asciiz "RUNNING: "
 
 ALL_INT_MASK: .word 0x0000ff00
 KBD_INT_MASK: .word 0x00010000
@@ -10,8 +18,8 @@ RCR: .word 0xffff0000
 
 TEST_STRING: .asciiz "Writting stuff from the timer interrupt!\n"
 
-.eqv PCB1 132
-.eqv PCB3 396
+.eqv PCB1 144
+.eqv PCB3 432
 
 .text
 int_enable:
@@ -56,23 +64,49 @@ non_int:
 	b int_end
 
 timer_int:
-	#la $a0, TEST_STRING
-	move $a0, $s4
-	jal save_registers
+	lw $a0, RUNNING
+	print_int
 	
-	beq $s4, 0, skip_loading
+	li $v0, 11
+	li $a0, ' '
+	syscall
 	
-	li $a0, 0
-	jal load_registers
+	la $a0, PCB_BLOCKS
+	print_int
+	new_line
 	
-	skip_loading:
-	jal next_process # v0 = process id of next task
+	jal save_running_task_registers
 	
-	li $a0, 0
-	jal save_registers
+	lw $a0, RUNNING
+	print_int
 	
-	move $a0, $v0
-	jal load_registers
+	#la $t0, RUNNING
+	lw $t0, RUNNING
+	sw $t0, LAST_READY+140 # last_ready -> next = run
+	
+	#la $t0, RUNNING
+	sw $t0, LAST_READY # last_ready = run
+
+	lw $a0, RUNNING
+	print_int
+
+	#la $t0, READY
+	lw $a0, READY
+	print_int
+	lw $t0, READY
+	sw $t0, RUNNING # run = ready
+	
+	lw $a0, RUNNING
+	print_int
+	#new_line
+	
+	#la $t0, READY+140 # ready -> next
+	lw $t0, READY+140
+	sw $t0, READY # ready = ready -> next
+	
+	sw $zero, RUNNING+140 # run_next = null
+	
+	jal load_next_task_registers
 	
 	b int_end
 	
@@ -97,152 +131,86 @@ int_end:
 	mtc0 $k0 , $12
 	eret
 	
-# a0 = PCB offset
-save_registers:
-	addi $sp, $sp, -8
-	sw $t0, 0($sp)
-	sw $t1, 4($sp)
+save_running_task_registers:
+	
+	sw $at, RUNNING+0
+	sw $v0, RUNNING+4
+	sw $v1, RUNNING+8
+	sw $a0, RUNNING+12
+	sw $a1, RUNNING+16
+	sw $a2, RUNNING+20
+	sw $a3, RUNNING+24
+	sw $t0, RUNNING+28
+	sw $t1, RUNNING+32
+	sw $t2, RUNNING+36
+	sw $t3, RUNNING+40
+	sw $t4, RUNNING+44
+	sw $t5, RUNNING+48
+	sw $t6, RUNNING+52
+	sw $t7, RUNNING+56
+	sw $s0, RUNNING+60
+	sw $s1, RUNNING+64
+	sw $s2, RUNNING+68
+	sw $s3, RUNNING+72
+	sw $s4, RUNNING+76
+	sw $s5, RUNNING+80
+	sw $s6, RUNNING+84
+	sw $s7, RUNNING+88
+	sw $t8, RUNNING+92
+	sw $t9, RUNNING+96
+	sw $k0, RUNNING+100
+	sw $k1, RUNNING+104
+	sw $gp, RUNNING+108
+	sw $sp, RUNNING+112
+	sw $fp, RUNNING+116
+	sw $ra, RUNNING+120
 
-	mulu $t0, $a0, PCB_SIZE
-	
-	la $t1, PCB_BLOCKS
-	add $t1, $t1, $t0
-	
-	sw $at, 0($t1)
-	sw $v0, 4($t1)
-	sw $v1, 8($t1)
-	sw $a0, 12($t1)
-	sw $a1, 16($t1)
-	sw $a2, 20($t1)
-	sw $a3, 24($t1)
-	#sw $t0,
-	#sw $t1,
-	sw $t2, 36($t1)
-	sw $t3, 40($t1)
-	sw $t4, 44($t1)
-	sw $t5, 48($t1)
-	sw $t6, 52($t1)
-	sw $t7, 56($t1)
-	sw $s0, 60($t1)
-	sw $s1, 64($t1)
-	sw $s2, 68($t1)
-	sw $s3, 72($t1)
-	sw $s4, 76($t1)
-	sw $s5, 80($t1)
-	sw $s6, 84($t1)
-	sw $s7, 88($t1)
-	sw $t8, 92($t1)
-	sw $t9, 96($t1)
-	sw $k0, 100($t1)
-	sw $k1, 104($t1)
-	sw $gp, 108($t1)
-	sw $sp, 112($t1)
-	sw $fp, 116($t1)
-	sw $ra, 120($t1)
-	
+	mfhi $t0
+	sw $t0, RUNNING+124
+	mflo $t0
+	sw $t0, RUNNING+128
+			
 	mfc0 $t2, $14
-	sw $t2, 124($t1)
+	sw $t2, RUNNING+132 # epc
 	
-	lw $t1, 4($sp)
-	lw $t0, 0($sp)
-	addi $sp, $sp, 8
-	
-	la $t2, PCB_BLOCKS
-	
-	sw $t0, 28($t2)
-	sw $t1, 32($t2)
-		
+	# pid and next_pcb are not registers that need to be saved
 	jr $ra
 	
-# a0 = PCB offset
-load_registers:
-	addi $sp, $sp, -12
-	sw $t0, 0($sp)
-	sw $t1, 4($sp)
-	sw $ra, 8($sp)
-
-	mulu $t0, $a0, PCB_SIZE
+load_next_task_registers:
+	lw $at, RUNNING+0
+	lw $v0, RUNNING+4
+	lw $v1, RUNNING+8
+	lw $a0, RUNNING+12
+	lw $a1, RUNNING+16
+	lw $a2, RUNNING+20
+	lw $a3, RUNNING+24
 	
-	la $t1, PCB_BLOCKS
-	add $t1, $t1, $t0
+	lw $t0, RUNNING+132
+	mtc0 $t0, $14 # load epc
 	
-	lw $at, 0($t1)
-	lw $v0, 4($t1)
-	lw $v1, 8($t1)
-	lw $a0, 12($t1)
-	lw $a1, 16($t1)
-	lw $a2, 20($t1)
-	lw $a3, 24($t1)
-	#sw $t0,
-	#sw $t1,
-	lw $t2, 36($t1)
-	lw $t3, 40($t1)
-	lw $t4, 44($t1)
-	lw $t5, 48($t1)
-	lw $t6, 52($t1)
-	lw $t7, 56($t1)
-	lw $s0, 60($t1)
-	lw $s1, 64($t1)
-	lw $s2, 68($t1)
-	lw $s3, 72($t1)
-	lw $s4, 76($t1)
-	lw $s5, 80($t1)
-	lw $s6, 84($t1)
-	lw $s7, 88($t1)
-	lw $t8, 92($t1)
-	lw $t9, 96($t1)
-	lw $k0, 100($t1)
-	lw $k1, 104($t1)
-	lw $gp, 108($t1)
-	lw $sp, 112($t1)
-	lw $fp, 116($t1)
-	lw $ra, 120($t1)
+	lw $t0, RUNNING+28
+	lw $t1, RUNNING+32
+	lw $t2, RUNNING+36
+	lw $t3, RUNNING+40
+	lw $t4, RUNNING+44
+	lw $t5, RUNNING+48
+	lw $t6, RUNNING+52
+	lw $t7, RUNNING+56
+	lw $s0, RUNNING+60
+	lw $s1, RUNNING+64
+	lw $s2, RUNNING+68
+	lw $s3, RUNNING+72
+	lw $s4, RUNNING+76
+	lw $s5, RUNNING+80
+	lw $s6, RUNNING+84
+	lw $s7, RUNNING+88
+	lw $t8, RUNNING+92
+	lw $t9, RUNNING+96
+	lw $k0, RUNNING+100
+	lw $k1, RUNNING+104
+	lw $gp, RUNNING+108
+	lw $sp, RUNNING+112
+	lw $fp, RUNNING+116
+	#lw $ra, RUNNING+120
 	
-	#mfc0 $t2, $14
-	#sw $t2, 124($t1)
-	
-	lw $t2, 124($t1)
-	mtc0 $t2, $14
-	
-	lw $ra, 8($sp)
-	lw $t1, 4($sp)
-	lw $t0, 0($sp)
-	addi $sp, $sp, 12
-	
-	la $t2, PCB_BLOCKS
-	
-	lw $t0, 28($t2)
-	lw $t1, 32($t2)
-		
 	jr $ra
-	
-next_process:
-	la $t0, PCB_BLOCKS
-	addi $t0, $t0, PCB3
-	
-	beq $s0, $t0, last_task_running
-	addi $s0, $s0, PCB1
-	continue_ready:
-	beq $s1, $t0, last_task_ready
-	addi $s1, $s1, PCB1
-	continue_lastready:
-	beq $s2, $t0, last_task_lastready
-	addi $s2, $s2, PCB1
-	
-	b done_switching
-	
-	last_task_running:
-		addi $s0, $s0, -396 # -1 * PCB3
-		b continue_ready
-	last_task_ready:
-		addi $s1, $s1, -396 # -1 * PCB3
-		b continue_lastready
-	last_task_lastready:
-		addi $s2, $s2, -396 # -1 * PCB3
-	done_switching:
-		move $t0, $s0
-		addi $t0, $t0, 76
-		
-		lw $v0, 0($t0) # next process id, to be returned from function
-		
-		jr $ra
