@@ -61,6 +61,7 @@ non_int:
 	b int_end
 
 timer_int:
+	jal print_PCB_sequence
 	jal print_pointers
 	
 	jal save_running_task_registers
@@ -76,6 +77,7 @@ timer_int:
 
 	#####
 	lw $t0, READY
+	#lw $t0, 0($t0)
 	sw $t0, RUNNING # run = ready
 	#####
 	
@@ -240,6 +242,10 @@ print_pointers:
 	jr $ra
 	
 print_PCB_sequence:
-	la $a0, next_str
-	print_string
+	la $a0, PCB_BLOCKS
+	
+	
+	
+	
+	
 	jr $ra
