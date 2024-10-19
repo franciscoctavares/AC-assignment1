@@ -14,3 +14,8 @@
 	li $a0, 10
 	syscall
 .end_macro
+
+.macro print_pointer
+	li $v0, 1
+	syscall
+.end_macro

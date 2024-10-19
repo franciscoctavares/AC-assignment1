@@ -1,14 +1,19 @@
 # file t0.asm
-    .data
-STRING_T0: .asciiz "\nFirst Task - "
-    .text
+	.data
+STRING_T0A: .asciiz "\Starting First task...\n"
+STRING_T0B:  .asciiz "\nFirst Task - "
+	
+	.text
 t0: 
 	li $t0,0
-repeat0:
-	la $a0, STRING_T0
+	la $a0, STRING_T0A
 	li $v0, 4
 	syscall
-	
+
+repeat0:
+	la $a0, STRING_T0B
+	li $v0, 4
+	syscall
 	move $a0,$t0
 	li $v0, 1
 	syscall
