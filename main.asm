@@ -38,8 +38,7 @@ empty_list_str: .asciiz "empty list!"
 AVAILABLE_str: .asciiz "AVAILABLE: "
 READY_str: .asciiz "READY: "
 LAST_READY_str: .asciiz "LAST_READY: "
-BASE_ADDR: .asciiz "PCB_BLOCKS: "
-NEXT_PCB_str: .asciiz "NEXT PCB: "
+#BASE_ADDR: .asciiz "PCB_BLOCKS: "
 
 CREATED_TASK_COUNTER: .word 0x00000000
 AVAILABLE: .word 0x00000000
@@ -152,6 +151,22 @@ start_multi:
 	sw $ra, 0($sp)
 	
 	jal int_enable
+	
+	# in this block, connect the PCB'S through the next pointer
+	la $t0, PCB_BLOCKS+144
+	#lw $t1, PCB_SIZE($t0)
+	sw $t0, -4($t0) # main -> task0
+	
+	addi $t0, $t0, PCB_SIZE
+	#addi $t1, $t1, PCB_SIZE
+	sw $t0, -4($t0) # task0 -> task1
+	
+	addi $t0, $t0, PCB_SIZE
+	#addi $t1, $t1, PCB_SIZE
+	sw $t0, -4($t0) # task1 -> task2
+	
+	addi $t0, $t0, PCB_SIZE
+	sw $zero, 140($t0) # task2 -> null
 	
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4

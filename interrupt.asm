@@ -10,6 +10,8 @@ READY: .word 0x00000000
 LAST_READY: .word 0x00000000
 
 RUNNING_str: .asciiz "RUNNING: "
+BASE_ADDR: .asciiz "PCB_BLOCKS: "
+NEXT_PCB_str: .asciiz "NEXT PCB: "
 
 ALL_INT_MASK: .word 0x0000ff00
 KBD_INT_MASK: .word 0x00010000
@@ -242,10 +244,48 @@ print_pointers:
 	jr $ra
 	
 print_PCB_sequence:
+	addi $sp, $sp, -4
+	sw $t0, 0($sp)
+
 	la $a0, PCB_BLOCKS
+	print_pointer
 	
+	move $t0, $a0
 	
+	la $a0, next_str
+	print_string
 	
+	addi $t0, $t0, 140
+	move $a0, $t0
+	lw $a0, 0($a0)
+	print_pointer
 	
+	la $a0, next_str
+	print_string
 	
+	addi $t0, $t0, PCB_SIZE
+	move $a0, $t0
+	lw $a0, 0($a0)
+	print_pointer
+	
+	la $a0, next_str
+	print_string
+	
+	addi $t0, $t0, PCB_SIZE
+	move $a0, $t0
+	lw $a0, 0($a0)
+	print_pointer
+	
+	la $a0, next_str
+	print_string
+	
+	addi $t0, $t0, PCB_SIZE
+	move $a0, $t0
+	lw $a0, 0($a0)
+	print_pointer
+	
+	new_line
+	
+	lw $t0, 0($sp)
+	addi $sp, $sp, 4
 	jr $ra
