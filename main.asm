@@ -24,8 +24,8 @@
 
 .data
 STRING_done: .asciiz "Multitask started\n"
-STRING_main: .asciiz "Task Zero\n"
-
+STRING_main0: .asciiz "Starting main task...\n"
+STRING_main1: .asciiz "Main Task - "
 string_test_error: .asciiz "Pointers with wrong values!\n"
 err1: .asciiz "ready pointer wrong!\n"
 err2: .asciiz "last ready pointer wrong!\n"
@@ -58,21 +58,22 @@ main:
 # newtask (t0)
 	la $a0, t0
 	jal newtask
-	jal print_all_pointers
+	#jal print_all_pointers
 	
 # newtask(t1)	
 	la $a0, t1
 	jal newtask
-	jal print_all_pointers
+	#jal print_all_pointers
 
 # newtask(t2)
 	la $a0, t2
 	jal newtask
-	jal print_all_pointers
+	#jal print_all_pointers
 
 # startmulti() and continue to 
 # the infinit loop of the main function
 	jal fix_linked_list
+	#jal print_PCB_sequence
 	jal start_multi
 	
 	la $a0, STRING_done
@@ -81,9 +82,18 @@ main:
 	
 infinit: 
 	# Reapeatedly print a string
-	la $a0, STRING_main
+	li $t0, 0
+	la $a0, STRING_main0
 	print_string
-	b infinit
+	loop:
+		la $a0, STRING_main1
+		print_string
+		move $a0, $t0
+		li $v0, 1
+		syscall
+		new_line
+		addi $t0, $t0, 1
+		b loop
 
 # the support functions	
 prep_multi:

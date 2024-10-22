@@ -42,12 +42,14 @@ int_enable:
 
 save_v0 : .word
 save_at: .word
+save_t0: .word
 
 .ktext 0x80000180
 
 move $k0 , $at
 sw $k0 , save_at
 sw $v0 , save_v0
+sw $t0, save_t0
 
 mfc0 $k0 , $13 # get cause register
 srl $t1 , $k0 ,2
@@ -65,7 +67,7 @@ non_int:
 
 timer_int:
 	jal print_PCB_sequence
-	jal print_pointers
+	#jal print_pointers
 	
 	jal save_running_task_registers
 	
@@ -112,6 +114,7 @@ timer_int:
 int_end:
 	lw $v0 , save_v0
 	lw $k0 , save_at
+	lw $t0, save_t0
 	move $at , $k0
 	mtc0 $zero , $13
 	mfc0 $k0 , $12
