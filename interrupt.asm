@@ -67,40 +67,22 @@ non_int:
 
 timer_int:
 	jal print_PCB_sequence
-	#jal print_pointers
 	
 	jal save_running_task_registers
 	
 	lw $t0, RUNNING
-	#lw $t0, 0($t0) # bug fix
 	lw $t1, LAST_READY
 	sw $t0, 140($t1) # last_ready -> next = run
-	####### fixed, i think
 	
 	lw $t0, RUNNING
-	#lw $t1, LAST_READY
-	#sw $t0, 0($t1) # last_ready = run
 	sw $t0, LAST_READY # last_ready = run
-	###### not sure if fixed
 	
-
-	#####
 	lw $t0, READY
-	#lw $t0, 0($t0)
 	sw $t0, RUNNING # run = ready
-	#####
-	
-	
 	
 	lw $t0, READY
-	lw $t0, 140($t0) # t0 = ready -> next
-	
-	lw $t1, READY
-	#sw $t0, 0($t1) # ready = ready -> next	
-	sw $t0, READY
-	
-	
-	
+	lw $t0, 140($t0) # t0 = ready->next
+	sw $t0, READY # ready = ready->next
 	
 	lw $t0, RUNNING
 	sw $zero, 140($t0) # run -> next = null
@@ -108,8 +90,6 @@ timer_int:
 	jal print_PCB_sequence
 	
 	jal load_next_task_registers
-	
-	#jal print_pointers
 	
 int_end:
 	lw $v0 , save_v0
@@ -165,7 +145,6 @@ save_running_task_registers:
 
 	mfhi $t0
 	sw $t0, 124($t1) # hi
-	
 	mflo $t0
 	sw $t0, 128($t1) # lo
 			

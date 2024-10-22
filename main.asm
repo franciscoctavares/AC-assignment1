@@ -111,7 +111,6 @@ prep_multi:
 	li $t0, 0
 	lw $t1, RUNNING
 	sw $t0, 136($t0) # stores main task's process id in the PCB
-	#sw $t1, RUNNING+136 # stores main task's process id in the PCB
 	
 	jr $ra
 	
