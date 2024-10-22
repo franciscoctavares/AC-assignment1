@@ -10,6 +10,7 @@ READY: .word 0x00000000
 LAST_READY: .word 0x00000000
 
 RUNNING_str: .asciiz "RUNNING: "
+READY_str: .asciiz "READY: "
 BASE_ADDR: .asciiz "PCB_BLOCKS: "
 NEXT_PCB_str: .asciiz "NEXT PCB: "
 
@@ -69,13 +70,17 @@ timer_int:
 	jal save_running_task_registers
 	
 	lw $t0, RUNNING
-	lw $t0, 0($t0) # bug fix
+	#lw $t0, 0($t0) # bug fix
 	lw $t1, LAST_READY
 	sw $t0, 140($t1) # last_ready -> next = run
+	####### fixed, i think
 	
 	lw $t0, RUNNING
-	lw $t1, LAST_READY
-	sw $t0, 0($t1) # last_ready = run
+	#lw $t1, LAST_READY
+	#sw $t0, 0($t1) # last_ready = run
+	sw $t0, LAST_READY # last_ready = run
+	###### not sure if fixed
+	
 
 	#####
 	lw $t0, READY
@@ -83,17 +88,26 @@ timer_int:
 	sw $t0, RUNNING # run = ready
 	#####
 	
+	
+	
 	lw $t0, READY
 	lw $t0, 140($t0) # t0 = ready -> next
+	
 	lw $t1, READY
-	sw $t0, 0($t1) # ready = ready -> next	
+	#sw $t0, 0($t1) # ready = ready -> next	
+	sw $t0, READY
+	
+	
+	
 	
 	lw $t0, RUNNING
 	sw $zero, 140($t0) # run -> next = null
 	
+	jal print_PCB_sequence
+	
 	jal load_next_task_registers
 	
-	jal print_pointers
+	#jal print_pointers
 	
 int_end:
 	lw $v0 , save_v0
@@ -246,44 +260,64 @@ print_pointers:
 print_PCB_sequence:
 	addi $sp, $sp, -4
 	sw $t0, 0($sp)
-
-	la $a0, PCB_BLOCKS
-	print_pointer
 	
-	move $t0, $a0
-	
-	la $a0, next_str
+	new_line
+	la $a0, RUNNING_str
 	print_string
+	space
 	
-	addi $t0, $t0, 140
-	move $a0, $t0
-	lw $a0, 0($a0)
-	print_pointer
+	lw $s0, RUNNING
+	lw $s1, 140($s0)
 	
-	la $a0, next_str
-	print_string
-	
-	addi $t0, $t0, PCB_SIZE
-	move $a0, $t0
-	lw $a0, 0($a0)
+	move $a0, $s0
 	print_pointer
 	
 	la $a0, next_str
 	print_string
 	
-	addi $t0, $t0, PCB_SIZE
-	move $a0, $t0
-	lw $a0, 0($a0)
+	move $a0, $s1
 	print_pointer
+	
+	new_line
+	##########################
+	la $a0, READY_str
+	print_string
+	space
+	space
+	space
+	
+	lw $s0, READY    # task0
+	lw $s1, 140($s0) # task1
+	lw $s2, 140($s1) # task2
+	lw $s3, 140($s2) # null
+	
+	
+	move $a0, $s0
+	print_pointer   # task0
 	
 	la $a0, next_str
 	print_string
 	
-	addi $t0, $t0, PCB_SIZE
-	move $a0, $t0
-	lw $a0, 0($a0)
-	print_pointer
+	#lw $s0, 140($s0) # task1
+	move $a0, $s1
+	print_pointer   # task1
 	
+	la $a0, next_str
+	print_string
+	
+	#lw $s1, 140($s0) # task2
+	move $a0, $s2
+	print_pointer   # task2
+	
+	la $a0, next_str
+	print_string
+	
+	#lw $s1, 140($s1) # null
+	move $a0, $s3
+	#li $a0, 0
+	print_pointer   # null
+	
+	new_line
 	new_line
 	
 	lw $t0, 0($sp)

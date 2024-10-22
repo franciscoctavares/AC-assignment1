@@ -19,3 +19,9 @@
 	li $v0, 1
 	syscall
 .end_macro
+
+.macro space
+	li $v0, 11
+	li $a0, ' '
+	syscall
+.end_macro

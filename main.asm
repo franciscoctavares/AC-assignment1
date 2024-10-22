@@ -36,7 +36,7 @@ test_string: .asciiz "Preparation done!\n"
 
 empty_list_str: .asciiz "empty list!"
 AVAILABLE_str: .asciiz "AVAILABLE: "
-READY_str: .asciiz "READY: "
+#READY_str: .asciiz "READY: "
 LAST_READY_str: .asciiz "LAST_READY: "
 #BASE_ADDR: .asciiz "PCB_BLOCKS: "
 
@@ -72,6 +72,7 @@ main:
 
 # startmulti() and continue to 
 # the infinit loop of the main function
+	jal fix_linked_list
 	jal start_multi
 	
 	la $a0, STRING_done
@@ -152,22 +153,6 @@ start_multi:
 	
 	jal int_enable
 	
-	# in this block, connect the PCB'S through the next pointer
-	la $t0, PCB_BLOCKS+144
-	#lw $t1, PCB_SIZE($t0)
-	sw $t0, -4($t0) # main -> task0
-	
-	addi $t0, $t0, PCB_SIZE
-	#addi $t1, $t1, PCB_SIZE
-	sw $t0, -4($t0) # task0 -> task1
-	
-	addi $t0, $t0, PCB_SIZE
-	#addi $t1, $t1, PCB_SIZE
-	sw $t0, -4($t0) # task1 -> task2
-	
-	addi $t0, $t0, PCB_SIZE
-	sw $zero, 140($t0) # task2 -> null
-	
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4
 	
@@ -209,6 +194,21 @@ print_all_pointers:
 	
 	new_line
 	new_line
+	
+	jr $ra
+	
+fix_linked_list:
+	lw $s0, READY # s0 = task0
+	
+	addi $t0, $s0, PCB_SIZE # t0 = task0 -> next
+	sw $t0, 140($s0) # task0 -> task1
+	
+	addi $s0, $s0, PCB_SIZE # s0 = task1
+	addi $t0, $s0, PCB_SIZE # t0 = task1 -> next
+	sw $t0, 140($s0) # task1 -> task2
+	
+	addi $s0, $s0, PCB_SIZE
+	sw $zero, 140($s0) # task2 -> null
 	
 	jr $ra
 
