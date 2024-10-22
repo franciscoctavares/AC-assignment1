@@ -73,7 +73,6 @@ main:
 # startmulti() and continue to 
 # the infinit loop of the main function
 	jal fix_linked_list
-	#jal print_PCB_sequence
 	jal start_multi
 	
 	la $a0, STRING_done
@@ -84,10 +83,12 @@ infinit:
 	# Reapeatedly print a string
 	li $t0, 0
 	la $a0, STRING_main0
-	print_string
+	li $v0, 4
+	syscall
 	loop:
 		la $a0, STRING_main1
-		print_string
+		li $v0, 4
+		syscall
 		move $a0, $t0
 		li $v0, 1
 		syscall
@@ -119,29 +120,25 @@ newtask:
 	
 	lb $t0, CREATED_TASK_COUNTER
 	bge $t0, 10, done
-	
 	bne $t0, 1, non_empty_list
 	empty_list:
-		la $a0, empty_list_str
-		print_string
-		new_line
 		lw $t0, AVAILABLE
 		sw $t0, READY # ready = available
 	non_empty_list:
 		lw $t0, AVAILABLE
-		sw $t0, LAST_READY # last ready = available
+		sw $t0, LAST_READY # LAST_READY = AVAILABLE
 		
 		addi $t0, $t0, PCB_SIZE
-		sw $t0, AVAILABLE # available += PCB_SIZE
+		sw $t0, AVAILABLE # AVAILABLE += PCB_SIZE
 
 		lb $t0, CREATED_TASK_COUNTER
 		addi $t0, $t0, 1
-		sb $t0, CREATED_TASK_COUNTER # task counter += 1
+		sb $t0, CREATED_TASK_COUNTER # CREATED_TASK_COUNTER += 1
 		
 		lb $t0, CREATED_TASK_COUNTER
 		addi $t0, $t0, -1
 		
-		mulu $t1, $t0, PCB_SIZE # $t1 = (task counter - 1) * 144(PCB_SIZE)
+		mulu $t1, $t0, PCB_SIZE # t1 = (CREATED_TASK_COUNTER - 1) * PCB_SIZE
 		addi $t1, $t1, 136
 		la $t2, PCB_BLOCKS
 		add $t2, $t2, $t1
@@ -153,7 +150,6 @@ newtask:
 		addi $t2, $t2, 132
 		sw $a0, 0($t2) # stores the new task's starting adress in the PCB's slot for the epc register	
 	done:
-		
 		jr $ra
     
 start_multi:
@@ -164,45 +160,6 @@ start_multi:
 	
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4
-	
-	jr $ra 
-
-print_all_pointers:
-	la $a0, BASE_ADDR
-	print_string
-	la $a0, PCB_BLOCKS
-	print_pointer
-	
-	new_line
-	
-	la $a0, AVAILABLE_str
-	print_string
-	lw $a0, AVAILABLE
-	print_pointer
-	
-	new_line
-	
-	la $a0, READY_str
-	print_string
-	lw $a0, READY
-	print_pointer
-	
-	new_line
-	
-	la $a0, LAST_READY_str
-	print_string
-	lw $a0, LAST_READY
-	print_pointer
-	
-	new_line
-	
-	la $a0, RUNNING_str
-	print_string
-	lw $a0, RUNNING
-	print_pointer
-	
-	new_line
-	new_line
 	
 	jr $ra
 	

@@ -1,9 +1,8 @@
 # file t2.asm
-	.data
+.data
 STRING_T2A: .asciiz "\Starting Third task...\n"
 STRING_T2B: .asciiz "\nThird Task - "
-
-	.text
+.text
 t2: 
 	li $t0,0
 	la $a0, STRING_T2A
