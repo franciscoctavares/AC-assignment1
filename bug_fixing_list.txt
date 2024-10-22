@@ -1,1 +1,0 @@
-corrigir a troca de contexto(ainda só consegue ir da main task para a task0, mas depois fica preso nela)
